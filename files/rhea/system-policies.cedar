@@ -6,7 +6,7 @@ permit (
      Action::"PUT",
      Action::"DELETE",
      Action::"PATCH"],
-  resource == "{{ .Release.Namespace }}"::Service::"titan"
+  resource == {{ .Release.Namespace }}::Service::"titan"
 )
 when
 {
@@ -26,7 +26,7 @@ permit (
      Action::"PUT",
      Action::"DELETE",
      Action::"PATCH"],
-  resource == "{{ .Release.Namespace }}"::Service::"terra"
+  resource == {{ .Release.Namespace }}::Service::"terra"
 )
 when
 {
@@ -46,7 +46,7 @@ permit (
      Action::"PUT",
      Action::"DELETE",
      Action::"PATCH"],
-  resource == "{{ .Release.Namespace }}"::Service::"genesis"
+  resource == {{ .Release.Namespace }}::Service::"genesis"
 )
 when
 {
@@ -66,7 +66,7 @@ permit (
      Action::"PUT",
      Action::"DELETE",
      Action::"PATCH"],
-  resource == "{{ .Release.Namespace }}"::Service::"metrics-gatherer"
+  resource == {{ .Release.Namespace }}::Service::"metrics-gatherer"
 )
 when
 {

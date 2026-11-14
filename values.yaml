@@ -105,3 +105,9 @@ ingress:
   enabled: true              # Toggle the ingress resource on/off
   className: ""              # Overrides root ingressClassName when set; falls back to it when empty
   annotations: {}            # Annotations applied to the ingress resource
+
+# Gateway API HTTPRoute configuration
+httproute:
+  enabled: false
+  hostname: 
+  parentRefs: []

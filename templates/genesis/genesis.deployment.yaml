@@ -100,3 +100,76 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.rhea.resources | nindent 12 }}
+        {{- if .Values.nginx.enabled }}
+        # Authentication endpoint: nginx sidecar. Serves
+        # /api/auth-service/<name>/ (any <name>) for external-auth edges
+        # (ingress-nginx auth-url): it checks the session against Genesis's
+        # auth-service endpoint (genesis.<namespace>.svc.cluster.local:3000)
+        # and answers 302 to the original location on success, 401
+        # otherwise — normalizing Genesis's login redirect, which
+        # auth_request-style edges would treat as a pass. Server config:
+        # files/genesis/nginx.conf, templated into the genesis-nginx
+        # ConfigMap.
+        - name: nginx
+          image: "{{ .Values.nginx.image.registry }}/{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}"
+          imagePullPolicy: {{ .Values.pull_policy }}
+          ports:
+            - containerPort: {{ .Values.nginx.port }}
+              name: auth-gate
+          # Restricted baseline. The unprivileged image declares a named
+          # `nginx` user — pin it numerically (UID/GID 101) so the pod's
+          # runAsNonRoot check can verify it.
+          securityContext:
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # Thin gate — keep its budget small.
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+          # The sidecar fronts the auth checks: if it dies, gated routes
+          # fail closed (500 from the edge) — restart it.
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.nginx.port }}
+            initialDelaySeconds: 5
+            failureThreshold: 6
+            periodSeconds: 10
+          volumeMounts:
+            # The server config (genesis-nginx ConfigMap) plus writable
+            # scratch for the read-only root filesystem: the config points
+            # the pid at /tmp and logs to /dev/stdout/err, and
+            # /var/log/nginx (the compile-time default error log, opened
+            # before the config's error_log takes effect) is writable.
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-log
+              mountPath: /var/log/nginx
+        {{- end }}
+      {{- if .Values.nginx.enabled }}
+      volumes:
+        # The sidecar's server config (genesis-nginx ConfigMap) and its
+        # writable scratch (pid, logs and cache live under /tmp,
+        # /var/cache/nginx and /var/log/nginx on the read-only rootfs).
+        - name: nginx-config
+          configMap:
+            name: genesis-nginx
+            defaultMode: 0444
+        - name: nginx-tmp
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-log
+          emptyDir: {}
+      {{- end }}

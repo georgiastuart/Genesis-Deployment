@@ -1,0 +1,10 @@
+{{- if .Values.nginx.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: genesis-nginx
+  namespace: {{ .Release.Namespace }}
+data:
+  nginx.conf: |
+{{ tpl (.Files.Get "files/genesis/nginx.conf") . | indent 4 }}
+{{- end }}

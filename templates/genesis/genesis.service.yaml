@@ -20,3 +20,11 @@ spec:
       targetPort: 8000
       protocol: TCP
       name: backend
+    {{- if .Values.nginx.enabled }}
+    # The auth sidecar's /api/auth-service/<name>/ endpoint — the
+    # auth-url target for external-auth edges (ingress-nginx).
+    - port: {{ .Values.nginx.port }}
+      targetPort: {{ .Values.nginx.port }}
+      protocol: TCP
+      name: auth
+    {{- end }}
